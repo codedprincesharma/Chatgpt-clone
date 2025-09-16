@@ -1,8 +1,9 @@
-import dotenv from 'dotenv'
 import app from './src/app.js'
+import connectDb from './src/config/db.js'
+import dotenv from 'dotenv'
 dotenv.config()
 const PORT = process.env.PORT || 3000
-
+connectDb()
 
 
 
@@ -11,5 +12,5 @@ const PORT = process.env.PORT || 3000
 
 
 app.listen(PORT, () => {
-  console.log("server running on port no 3000");
+  console.log(`server running on ${PORT}`)
 })

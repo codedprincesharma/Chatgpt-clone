@@ -1,15 +1,15 @@
-import express from 'express'
-import authController from '../controllers/auth.controller.js'
-const routes = express.Router()
+import express from "express"
+import authController from "../controllers/auth.controller"
+const router = express.Router()
 
-routes(express.json())
-
-
-//controller
-routes.use('/', authController)
+router.use('/register', authController)
 
 
 
 
 
-export default routes
+
+
+
+
+export default router
