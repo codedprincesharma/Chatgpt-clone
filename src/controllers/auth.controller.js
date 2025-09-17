@@ -1,48 +1,61 @@
-import userModel from "../model/user.mode.jsl";
-import bcrypt from "bcrypt"
+import userModel from "../model/user.model.js";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
-
-const registerController = async (req, res) => {
-  const { fullName: { firstName, lastName }, email, password } = req.body
-
+async function registerContrller(req, res) {
   try {
-    // check user Exist
-    const existUSer = await userModel.findOne({
+    const { fullName = {}, email, password } = req.body || {};
+    const { firstName, lastName } = fullName;
+
+
+    //check user exists
+    const isUseralreadyExist = await userModel.findOne({
       email
     })
-    if (existUSer) {
-      return res.status(409).json({
-        message: "user already exist !"
+    if (isUseralreadyExist) {
+      return res.status(400).json({
+        message: "user already exists"
       })
     }
+    //hash password
+    const hashPassword = await bcrypt.hash(password, 10)
 
-    // create user
-    const hash = await bcrypt.hash(password, 10)
+
+    // create user 
     const newUser = await userModel.create({
       fullName: {
         firstName,
         lastName
       },
       email,
-      password: hash
+      password: hashPassword
     })
 
+    // create tocken
+    const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, {
+      expiresIn: "7d"
+    })
+
+    res.cookie("token", token)
     res.status(201).json({
-      success: true,
-      message: "User registered successfully!",
+      message: "user create",
       user: {
-        id: newUser._id,
+        fullName: newUser.fullName,
         email: newUser.email,
-        fullName: newUser.fullName
+        _id: newUser._id
       }
     })
+  } catch (err) {
+    console.log("error", err),
+      res.status(500).json({
+        message: "server error",
+        err: err.message
+      })
 
-  } catch (error) {
-    console.log('error', error.message)
   }
 
 }
 
 
 
-export default { registerController }
+export default { registerContrller }
