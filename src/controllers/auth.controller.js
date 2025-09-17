@@ -93,8 +93,6 @@ async function loginController(req, res) {
       err: err.message
     })
   }
-
 }
-
 
 export default { registerContrller, loginController }
