@@ -8,7 +8,7 @@ function initSocketServer(httpServer) {
 
   io.use(async (socket, next) => {
     const cookies = cookie.parse(socket.handshake.headers.cookie || "");
-    console.log(cookies);
+    // console.log(cookies);
 
     if (!cookies.token) {
       return next(new Error("Authentication error: no token provided"));
@@ -21,7 +21,6 @@ function initSocketServer(httpServer) {
       if (!user) {
         return next(new Error("Authentication error: user not found"));
       }
-
       socket.user = user;
       next();
     } catch (err) {
@@ -31,8 +30,15 @@ function initSocketServer(httpServer) {
   });
 
   io.on("connection", (socket) => {
-    console.log("New socket connection", socket.id);
-    console.log("Authenticated user:", socket.user?.email); // optional
+    socket.on("ai-message", async (messagePayload) => {
+      console.log(messagePayload)
+    })
+
+  })
+
+  io.on("connection", (socket) => {
+    // console.log("New socket connection", socket.id);
+    // console.log("Authenticated user:", socket.user); // optional
   });
 }
 
