@@ -6,11 +6,9 @@ import aiService from '../services/ai.service.js'
 
 function initSocketServer(httpServer) {
   const io = new Server(httpServer, {});
-
   io.use(async (socket, next) => {
     const cookies = cookie.parse(socket.handshake.headers.cookie || "");
     // console.log(cookies);
-
     if (!cookies.token) {
       return next(new Error("Authentication error: no token provided"));
     }
@@ -34,21 +32,21 @@ function initSocketServer(httpServer) {
     socket.on("ai-message", async (messagePayload) => {
       console.log(messagePayload)
 
-      const response = await aiService.generateResponse(messagePayload.content)
+      const response = await aiService(messagePayload.content)
+
       socket.emit("ai-message", {
         content: response,
         chat: messagePayload.chat
-
       })
     })
   })
 
-  io.on("connection", (socket) => {
-    // console.log("New socket connection", socket.id);
-    // console.log("Authenticated user:", socket.user); // optional
+  // io.on("connection", (socket) => {
+  //   // console.log("New socket connection", socket.id);
+  //   // console.log("Authenticated user:", socket.user); // optional
 
 
-  });
+  // });
 }
 
 export default initSocketServer;
