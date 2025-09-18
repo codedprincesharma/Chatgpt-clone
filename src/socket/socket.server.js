@@ -2,6 +2,7 @@ import { Server } from "socket.io";
 import cookie from "cookie";
 import jwt from "jsonwebtoken";
 import userModel from "../models/user.model.js";
+import aiService from '../services/ai.service.js'
 
 function initSocketServer(httpServer) {
   const io = new Server(httpServer, {});
@@ -32,13 +33,21 @@ function initSocketServer(httpServer) {
   io.on("connection", (socket) => {
     socket.on("ai-message", async (messagePayload) => {
       console.log(messagePayload)
-    })
 
+      const response = await aiService.generateResponse(messagePayload.content)
+      socket.emit("ai-message", {
+        content: response,
+        chat: messagePayload.chat
+
+      })
+    })
   })
 
   io.on("connection", (socket) => {
     // console.log("New socket connection", socket.id);
     // console.log("Authenticated user:", socket.user); // optional
+
+
   });
 }
 
