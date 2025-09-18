@@ -29,17 +29,30 @@ function initSocketServer(httpServer) {
   });
 
   io.on("connection", (socket) => {
+    console.log("New socket connected:", socket.id);
+
     socket.on("ai-message", async (messagePayload) => {
-      console.log(messagePayload)
+      try {
+        console.log("Incoming from client:", messagePayload);
 
-      const response = await aiService(messagePayload.content)
+        const response = await aiService(messagePayload.content);
 
-      socket.emit("ai-message", {
-        content: response,
-        chat: messagePayload.chat
-      })
-    })
-  })
+        socket.emit("ai-message", {
+          content: response,
+          chat: messagePayload.chat
+        });
+
+        console.log("Response sent to client:", response);
+
+      } catch (err) {
+        console.error("AI Service Error:", err);
+        socket.emit("ai-message", {
+          content: "Error processing AI request",
+          chat: messagePayload.chat
+        });
+      }
+    });
+  });
 
   // io.on("connection", (socket) => {
   //   // console.log("New socket connection", socket.id);

@@ -1,16 +1,12 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY })
+const ai = new GoogleGenerativeAI("AIzaSyDtWaKZctVq8PT6L3cdceu_ph55hPYsqUg");
 
+async function generateResponse(content) {
+  const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-async function genrateResponse(content) {
-
-  const response = await ai.models.generateContent({
-    model: "gemini-2.0-flase",
-    contents: content
-  })
-  return response.text
+  const result = await model.generateContent(content);
+  return result.response.text();
 }
 
-
-export default genrateResponse;
+export default generateResponse;
