@@ -3,6 +3,7 @@ import cookie from "cookie";
 import jwt from "jsonwebtoken";
 import userModel from "../models/user.model.js";
 import aiService from '../services/ai.service.js'
+import messageModel from "../models/message.model.js";
 
 function initSocketServer(httpServer) {
   const io = new Server(httpServer, {});
@@ -30,19 +31,39 @@ function initSocketServer(httpServer) {
 
   io.on("connection", (socket) => {
     console.log("New socket connected:", socket.id);
-
     socket.on("ai-message", async (messagePayload) => {
       try {
         console.log("Incoming from client:", messagePayload);
 
-        const response = await aiService(messagePayload.content);
+        await messageModel.create({
+          chat: messagePayload.chat,
+          user: socket.user._id,
+          content: messagePayload.content,
+          role: "user"
+        })
+
+        const chatHistory = await messageModel.find({
+          chat: messagePayload.chat
+        })
+
+        console.log("chat HIstory :");
+
+
+        const response = await aiService(chatHistory.map(item => {
+          return {
+            role: item.role,
+            parts: [{ text: item.content }]
+          }
+        }))
 
         socket.emit("ai-message", {
           content: response,
           chat: messagePayload.chat
         });
 
+
         console.log("Response sent to client:", response);
+
 
       } catch (err) {
         console.error("AI Service Error:", err);
