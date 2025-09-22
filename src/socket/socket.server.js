@@ -2,27 +2,28 @@ import { Server } from "socket.io";
 import cookie from "cookie";
 import jwt from "jsonwebtoken";
 import userModel from "../models/user.model.js";
-import aiService from "../services/ai.service.js";
+import aiService from "../services/ai.service.js"; // Gemini chat service
 import messageModel from "../models/message.model.js";
-import { createMemory, quaryMemory } from '../services/vactor.service.js'
+import vectorService from "../services/vactor.service.js"; // Pinecone service
+
+// Fake vector generator
+function fakeVector(content, size = 768) {
+  return Array.from({ length: size }, () => Math.random());
+}
 
 function initSocketServer(httpServer) {
   const io = new Server(httpServer, {});
 
-  // Middleware for JWT authentication
+  // JWT authentication
   io.use(async (socket, next) => {
     const cookies = cookie.parse(socket.handshake.headers.cookie || "");
-    if (!cookies.token) {
-      return next(new Error("Authentication error: no token provided"));
-    }
+    if (!cookies.token) return next(new Error("Authentication error: no token provided"));
 
     try {
       const decoded = jwt.verify(cookies.token, process.env.JWT_SECRET);
       const user = await userModel.findById(decoded.id);
+      if (!user) return next(new Error("Authentication error: user not found"));
 
-      if (!user) {
-        return next(new Error("Authentication error: user not found"));
-      }
       socket.user = user;
       next();
     } catch (err) {
@@ -38,27 +39,36 @@ function initSocketServer(httpServer) {
       try {
         console.log("Incoming from client:", messagePayload);
 
-        // Save user message
-        await messageModel.create({
+        // Save user message in MongoDB
+        const savedMessage = await messageModel.create({
           chat: messagePayload.chat,
           user: socket.user._id,
           content: messagePayload.content,
           role: "user",
         });
 
+        // Generate fake vector
+        const vector = fakeVector(messagePayload.content);
+        console.log("Vector generated (fake):", vector.length);
 
-        await createMemory({
-          
-        })
+        // Save vector + message metadata in Pinecone
+        await vectorService.createMemory({
+          vectors: vector,
+          metadata: {
+            user: socket.user._id.toString(),
+            chat: messagePayload.chat,
+            content: messagePayload.content,
+          },
+          messageId: savedMessage._id.toString(),
+        });
 
-        // Get last 4 messages from chat
+        // Fetch last 20 messages from chat
         const chatHistory = await messageModel
           .find({ chat: messagePayload.chat })
           .sort({ createdAt: -1 })
           .limit(20)
           .lean();
 
-        // Reverse to keep order oldest -> newest
         const history = chatHistory.reverse();
 
         // Format chat for Gemini
@@ -67,15 +77,27 @@ function initSocketServer(httpServer) {
           parts: [{ text: item.content }],
         }));
 
-        // Call AI service
-        const response = await aiService({ contents: formattedHistory });
+        // Call Gemini AI service
+        const response = await aiService.generateResponse({ contents: formattedHistory });
 
-        // Save AI response
-        await messageModel.create({
+        // Save AI response in MongoDB
+        const aiMessage = await messageModel.create({
           chat: messagePayload.chat,
           user: socket.user._id,
           content: response,
           role: "model",
+        });
+
+        // Generate fake vector for AI response and save in Pinecone
+        const aiVector = fakeVector(response);
+        await vectorService.createMemory({
+          vectors: aiVector,
+          metadata: {
+            user: "AI",
+            chat: messagePayload.chat,
+            content: response,
+          },
+          messageId: aiMessage._id.toString(),
         });
 
         // Send AI response to client
