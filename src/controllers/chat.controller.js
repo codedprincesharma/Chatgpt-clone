@@ -1,4 +1,4 @@
- import chatModel from '../models/chat.model.js'
+import chatModel from '../models/chat.model.js'
 
 async function createChat(req, res) {
   try {
@@ -19,6 +19,7 @@ async function createChat(req, res) {
         user: chat.user
       }
     });
+
   } catch (err) {
     res.status(500).json({
       message: "Server error",

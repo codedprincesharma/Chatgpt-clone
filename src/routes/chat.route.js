@@ -4,6 +4,6 @@ import express from 'express';
 
 const router = express.Router()
 
-router.post('/', authMiddleware.authUser, createChat.createChat)
+router.post('/', authMiddleware.authUser , createChat.createChat) 
 
 export default router

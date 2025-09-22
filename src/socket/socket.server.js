@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import userModel from "../models/user.model.js";
 import aiService from "../services/ai.service.js";
 import messageModel from "../models/message.model.js";
+import { createMemory, quaryMemory } from '../services/vactor.service.js'
 
 function initSocketServer(httpServer) {
   const io = new Server(httpServer, {});
@@ -45,11 +46,16 @@ function initSocketServer(httpServer) {
           role: "user",
         });
 
+
+        await createMemory({
+          
+        })
+
         // Get last 4 messages from chat
         const chatHistory = await messageModel
           .find({ chat: messagePayload.chat })
           .sort({ createdAt: -1 })
-          .limit(4)
+          .limit(20)
           .lean();
 
         // Reverse to keep order oldest -> newest
