@@ -14,6 +14,7 @@ function fakeVector(content, size = 768) {
 function initSocketServer(httpServer) {
   const io = new Server(httpServer, {});
 
+
   // JWT authentication
   io.use(async (socket, next) => {
     const cookies = cookie.parse(socket.handshake.headers.cookie || "");
@@ -32,6 +33,7 @@ function initSocketServer(httpServer) {
     }
   });
 
+  
   io.on("connection", (socket) => {
     console.log("New socket connected:", socket.id);
 
